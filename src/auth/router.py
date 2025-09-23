@@ -44,6 +44,8 @@ def token_login(user_email: str= Depends(authenticate_user)) -> UserToken:
 
 @auth_router.post("/token/refresh", status_code=status.HTTP_200_OK)
 def update_token(authorization: str = Header(default=None)) -> UserToken:
+    if not authorization:
+        raise UnauthenticatedException()
     try:
         token_type, old_refresh_token = authorization.split(" ") 
     except Exception:
@@ -70,7 +72,9 @@ def update_token(authorization: str = Header(default=None)) -> UserToken:
     )
 
 @auth_router.delete("/token", status_code=status.HTTP_204_NO_CONTENT)
-def delete_token(authorization: str = Header(default=None)) -> Response:
+def delete_token(authorization: str = Header(default=None)):
+    if not authorization:
+        raise UnauthenticatedException()
     try:
         token_type, refresh_token = authorization.split(" ") 
     except Exception:
@@ -84,8 +88,7 @@ def delete_token(authorization: str = Header(default=None)) -> Response:
     
     blocked_token_db[refresh_token] = payload.get("exp")
     
-    return Response()
-
+    return None
 @auth_router.post("/session", status_code=status.HTTP_200_OK)
 def session_login(response: Response, user_email: str= Depends(authenticate_user)):
     sid = Session.get_session_id()
@@ -97,7 +100,7 @@ def session_login(response: Response, user_email: str= Depends(authenticate_user
         httponly=True,
         max_age=LONG_SESSION_LIFESPAN * 60,
     )
-    return {"message": "login"}
+    return None
         
 @auth_router.delete("/session", status_code=status.HTTP_204_NO_CONTENT)
 def session_logout(request: Request, response: Response) -> Response: # Request를 통해 요청의 쿠키 접근

@@ -4,7 +4,7 @@ import secrets
 import logging
 logger = logging.getLogger("uvicorn.error")
 
-blocked_token_db = set()
+blocked_token_db = {}
 user_db = []
 session_db = {}
 
