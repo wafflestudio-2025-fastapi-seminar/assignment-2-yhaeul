@@ -87,7 +87,7 @@ def delete_token(authorization: str = Header(default=None)) -> Response:
     return Response()
 
 @auth_router.post("/session", status_code=status.HTTP_200_OK)
-def session_login(response: Response, user_email: str= Depends(authenticate_user)) -> Response:
+def session_login(response: Response, user_email: str= Depends(authenticate_user)):
     sid = Session.get_session_id()
     expire_at = datetime.now(timezone.utc) + timedelta(minutes=LONG_SESSION_LIFESPAN)
     session_db[sid] = {"user_email": user_email, "expire_at": expire_at}
@@ -97,7 +97,7 @@ def session_login(response: Response, user_email: str= Depends(authenticate_user
         httponly=True,
         max_age=LONG_SESSION_LIFESPAN * 60,
     )
-    return Response
+    return {"message": "login"}
         
 @auth_router.delete("/session", status_code=status.HTTP_204_NO_CONTENT)
 def session_logout(request: Request, response: Response) -> Response: # Request를 통해 요청의 쿠키 접근

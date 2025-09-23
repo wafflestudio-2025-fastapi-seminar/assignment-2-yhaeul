@@ -30,9 +30,7 @@ class Password():
     @classmethod
     def verify_password(cls, hashed_password, password):
         try:
-            logger.info(hashed_password)
             verify_result = cls.ph.verify(hashed_password, password)
-            logger.info(verify_result)
         except VerifyMismatchError:
             return False
         return verify_result

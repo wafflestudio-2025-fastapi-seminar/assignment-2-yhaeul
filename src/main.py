@@ -21,7 +21,7 @@ def handle_request_validation_error(request, exc: RequestValidationError) -> JSO
     
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
-        content=jsonable_encoder({"detail": exc.errors()}) # 상세 설명 반환 (jsonable_encoder 이용해서 JSON 호환 가능한 버전으로 변환)
+        content={"detail": exc.errors()} # 상세 설명 반환
     )
 
 # CustomException에 대한 exception_handler
