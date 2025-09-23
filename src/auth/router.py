@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Cookie, status, Response
+from fastapi import APIRouter, Depends, Cookie, status, Response, Request
 
 from src.common.database import blocked_token_db, session_db, user_db, Session, Password
 from src.auth.schemas import UserLoginRequest
@@ -35,7 +35,13 @@ def session_login(request: UserLoginRequest, response: Response) -> Response:
                 httponly=True,
                 max_age=LONG_SESSION_LIFESPAN * 60,
             )
-            return Response(status_code=status.HTTP_200_OK)
+            return Response()
     raise InvalidAccountException()
         
-# @auth_router.delete("/session")
+@auth_router.delete("/session", status_code=status.HTTP_204_NO_CONTENT)
+def session_logout(request: Request, response: Response) -> Response: # Request를 통해 요청의 쿠키 접근
+    sid = request.cookies.get("sid")
+    if sid:
+        response.delete_cookie(key="sid") # 클라이언트의 쿠키 만료
+        if sid in session_db.keys(): # 서버에 저장된 세션이 존재한다면 제거
+            session_db.pop(sid, None)
