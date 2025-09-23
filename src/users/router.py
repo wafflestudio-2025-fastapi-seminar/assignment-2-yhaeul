@@ -10,13 +10,16 @@ from fastapi import (
 
 from src.users.schemas import CreateUserRequest, UserResponse
 from src.common.database import blocked_token_db, session_db, user_db, UserId, Password
-
+from src.users.errors import DuplicateEmailException
 
 # 라우터 생성
 user_router = APIRouter(prefix="/users", tags=["users"])
 
 @user_router.post("/", status_code=status.HTTP_201_CREATED)
 def create_user(request: CreateUserRequest) -> UserResponse:
+    email_list = [user.get("email") for user in user_db]
+    if request.email in email_list:
+        raise DuplicateEmailException()
     user_id = UserId.get_next()
     hashed_password = Password.hash_password(request.password) # password 단방향 암호화
 

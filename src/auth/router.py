@@ -33,7 +33,7 @@ def session_login(request: UserLoginRequest, response: Response) -> Response:
                 key="sid",
                 value=sid,
                 httponly=True,
-                max_age=LONG_SESSION_LIFESPAN,
+                max_age=LONG_SESSION_LIFESPAN * 60,
             )
             return Response(status_code=status.HTTP_200_OK)
     raise InvalidAccountException()
