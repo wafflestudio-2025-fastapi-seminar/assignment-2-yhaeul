@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger('uvicorn.error')
 
+# CustomException 정의
 class CustomException(Exception):
     def __init__(
         self,
