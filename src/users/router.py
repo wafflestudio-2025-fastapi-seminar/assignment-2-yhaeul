@@ -46,8 +46,6 @@ def create_user(request: CreateUserRequest) -> UserResponse:
 
 @user_router.get("/me", status_code=status.HTTP_200_OK)
 def get_user_info(sid: str = Cookie(default=None), authorization: str = Header(default=None)) -> UserResponse:
-    logger.info(authorization)
-    logger.info(sid)
     if sid:
         session = session_db.get(sid)
         if sid not in session_db:
@@ -64,7 +62,6 @@ def get_user_info(sid: str = Cookie(default=None), authorization: str = Header(d
                 return UserResponse(**user_copy)
 
     elif authorization:
-        logger.info("ppp")
         try:
             token_type, access_token = authorization.split(" ") 
         except Exception:

@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, Cookie, status, Response, Request
+from fastapi import APIRouter, Depends, Cookie, status, Response, Request, Header
 
 from src.common.database import blocked_token_db, session_db, user_db, Session, Password, SECRET_KEY, ALGORITHM
 from src.auth.schemas import UserLoginRequest, UserToken
-from src.users.errors import InvalidAccountException
+from src.users.errors import *
 
 from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timedelta, timezone
@@ -42,11 +42,50 @@ def token_login(user_email: str= Depends(authenticate_user)) -> UserToken:
         refresh_token=refresh_token
     )
 
-# @auth_router.post("/token/refresh")
+@auth_router.post("/token/refresh", status_code=status.HTTP_200_OK)
+def update_token(authorization: str = Header(default=None)) -> UserToken:
+    try:
+        token_type, old_refresh_token = authorization.split(" ") 
+    except Exception:
+        raise BadAuthorizationHeaderException()
+    if token_type != "Bearer":
+        raise BadAuthorizationHeaderException()
+    if old_refresh_token in blocked_token_db:
+        raise InvalidTokenException()
+    
+    try:
+        payload = jwt.decode(old_refresh_token, SECRET_KEY, algorithms=[ALGORITHM]) # 위조, 변조, 만료 확인 포함
+        user_email = payload.get("sub")
+    except JWTError:
+        raise InvalidTokenException()
+    
+    access_token = create_token(sub=user_email, expires_delta=SHORT_SESSION_LIFESPAN)
+    refresh_token = create_token(sub=user_email, expires_delta=LONG_SESSION_LIFESPAN)
 
+    blocked_token_db[old_refresh_token] = payload.get("exp")
 
-# @auth_router.delete("/token")
+    return UserToken(
+        access_token=access_token,
+        refresh_token=refresh_token
+    )
 
+@auth_router.delete("/token", status_code=status.HTTP_204_NO_CONTENT)
+def delete_token(authorization: str = Header(default=None)) -> Response:
+    try:
+        token_type, refresh_token = authorization.split(" ") 
+    except Exception:
+        raise BadAuthorizationHeaderException()
+    if token_type != "Bearer":
+        raise BadAuthorizationHeaderException()
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM]) # 위조, 변조, 만료 확인 포함
+        user_email = payload.get("sub")
+    except JWTError:
+        raise InvalidTokenException()
+    
+    blocked_token_db[refresh_token] = payload.get("exp")
+    
+    return Response()
 
 @auth_router.post("/session", status_code=status.HTTP_200_OK)
 def session_login(response: Response, user_email: str= Depends(authenticate_user)) -> Response:
