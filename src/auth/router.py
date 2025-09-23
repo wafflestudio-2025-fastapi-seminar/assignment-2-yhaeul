@@ -97,7 +97,7 @@ def session_login(response: Response, user_email: str= Depends(authenticate_user
         httponly=True,
         max_age=LONG_SESSION_LIFESPAN * 60,
     )
-    return Response()
+    return Response
         
 @auth_router.delete("/session", status_code=status.HTTP_204_NO_CONTENT)
 def session_logout(request: Request, response: Response) -> Response: # Request를 통해 요청의 쿠키 접근
