@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Cookie, status, Response, Request
 
-from src.common.database import blocked_token_db, session_db, user_db, Session, Password
+from src.common.database import blocked_token_db, session_db, user_db, Session, Password, SECRET_KEY, ALGORITHM
 from src.auth.schemas import UserLoginRequest, UserToken
 from src.users.errors import InvalidAccountException
 
@@ -14,9 +14,6 @@ logger = logging.getLogger('uvicorn.error')
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
-
-SECRET_KEY = "secret-key"
-ALGORITHM = "HS256"
 
 SHORT_SESSION_LIFESPAN = 15
 LONG_SESSION_LIFESPAN = 24 * 60
@@ -54,7 +51,8 @@ def token_login(user_email: str= Depends(authenticate_user)) -> UserToken:
 @auth_router.post("/session", status_code=status.HTTP_200_OK)
 def session_login(response: Response, user_email: str= Depends(authenticate_user)) -> Response:
     sid = Session.get_session_id()
-    session_db[sid] = user_email
+    expire_at = datetime.now(timezone.utc) + timedelta(minutes=LONG_SESSION_LIFESPAN)
+    session_db[sid] = {"user_email": user_email, "expire_at": expire_at}
     response.set_cookie(
         key="sid",
         value=sid,

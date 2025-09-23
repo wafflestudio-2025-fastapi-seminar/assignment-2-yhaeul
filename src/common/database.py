@@ -8,6 +8,8 @@ blocked_token_db = set()
 user_db = []
 session_db = {}
 
+SECRET_KEY = "secret-key"
+ALGORITHM = "HS256"
 
 class UserId():
     id = 0

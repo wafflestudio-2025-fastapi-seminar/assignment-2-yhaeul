@@ -1,16 +1,21 @@
 from typing import Annotated
+from datetime import datetime, timezone
+from jose import JWTError, jwt
 
 from fastapi import (
     APIRouter,
     Depends,
     Cookie,
     Header,
-    status
+    status,
 )
 
 from src.users.schemas import CreateUserRequest, UserResponse
-from src.common.database import blocked_token_db, session_db, user_db, UserId, Password
-from src.users.errors import DuplicateEmailException
+from src.common.database import blocked_token_db, session_db, user_db, UserId, Password, SECRET_KEY, ALGORITHM
+from src.users.errors import *
+
+import logging
+logger = logging.getLogger('uvicorn.error')
 
 # 라우터 생성
 user_router = APIRouter(prefix="/users", tags=["users"])
@@ -39,6 +44,45 @@ def create_user(request: CreateUserRequest) -> UserResponse:
         bio=request.bio
     )
 
-@user_router.get("/me")
-def get_user_info(s_id: Annotated[str | None, Cookie()] = None):
-    pass
+@user_router.get("/me", status_code=status.HTTP_200_OK)
+def get_user_info(sid: str = Cookie(default=None), authorization: str = Header(default=None)) -> UserResponse:
+    logger.info(authorization)
+    logger.info(sid)
+    if sid:
+        session = session_db.get(sid)
+        if sid not in session_db:
+            raise InvalidSessionException()
+        elif session.get("expire_at") < datetime.now(timezone.utc):
+            raise InvalidSessionException()
+        
+        user_email = session.get("user_email")
+
+        for user in user_db:
+            if user["email"] == user_email:
+                user_copy = user.copy()
+                user_copy.pop("hashed_password")
+                return UserResponse(**user_copy)
+
+    elif authorization:
+        logger.info("ppp")
+        try:
+            token_type, access_token = authorization.split(" ") 
+        except Exception:
+            raise BadAuthorizationHeaderException()
+        if token_type != "Bearer":
+            raise BadAuthorizationHeaderException()
+        
+        try:
+            decoded_access_token = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM]) # 위조, 변조, 만료 확인 포함
+            user_email = decoded_access_token.get("sub")     
+        except JWTError:
+            raise InvalidTokenException()
+
+        for user in user_db:
+            if user["email"] == user_email:
+                user.pop("hashed_password")
+                return UserResponse(**user)   
+
+    raise UnauthenticatedException()
+
+    
