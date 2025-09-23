@@ -31,13 +31,6 @@ class CreateUserRequest(BaseModel):
         if len(v) > 500:
             raise InvalidBioLengthException()
         return v
-    
-    @field_validator('email', mode='after')
-    def validate_email(cls, v):
-        email_list = [user.get("email") for user in user_db]
-        if v in email_list:
-            raise DuplicateEmailException()
-        return v
 
 class UserResponse(BaseModel):
     user_id: int

@@ -70,8 +70,8 @@ def get_user_info(sid: str = Cookie(default=None), authorization: str = Header(d
             raise BadAuthorizationHeaderException()
         
         try:
-            decoded_access_token = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM]) # 위조, 변조, 만료 확인 포함
-            user_email = decoded_access_token.get("sub")     
+            payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM]) # 위조, 변조, 만료 확인 포함
+            user_email = payload.get("sub")     
         except JWTError:
             raise InvalidTokenException()
 

@@ -79,7 +79,6 @@ def delete_token(authorization: str = Header(default=None)) -> Response:
         raise BadAuthorizationHeaderException()
     try:
         payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM]) # 위조, 변조, 만료 확인 포함
-        user_email = payload.get("sub")
     except JWTError:
         raise InvalidTokenException()
     
