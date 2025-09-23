@@ -1,6 +1,5 @@
 import http
 import logging
-
 logger = logging.getLogger('uvicorn.error')
 
 # CustomException 정의
